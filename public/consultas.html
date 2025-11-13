@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Consultas registradas — AgroTrack</title>
+  <link rel="stylesheet" href="/estilos.css" />
+</head>
+<body>
+  <header>
+    <h1>AgroTrack</h1>
+    <p>Consultas guardadas</p>
+  </header>
+
+  <div class="container">
+    <nav class="menu">
+      <a class="btn" href="/">Inicio</a>
+      <a class="btn" href="/contacto.html">Volver al formulario</a>
+    </nav>
+
+    <section class="card">
+      <h2>Consultas registradas</h2>
+      <div id="consultas">Cargando...</div>
+    </section>
+  </div>
+
+  <script>
+    async function cargarConsultas() {
+      try {
+        const res = await fetch("/api/contactos");
+        const data = await res.json();
+
+        const contenedor = document.getElementById("consultas");
+
+        if (data.length === 0) {
+          contenedor.innerHTML = "<p>No hay consultas registradas.</p>";
+          return;
+        }
+
+        const html = data
+          .map(
+            (c) => `
+          <div class="consulta" style="border:1px solid #ccc; padding:10px; margin-bottom:10px; border-radius:8px;">
+            <p><strong>🧑 Nombre:</strong> ${c.nombre}</p>
+            <p><strong>📧 Email:</strong> ${c.email}</p>
+            <p><strong>💬 Mensaje:</strong> ${c.mensaje}</p>
+            <p><strong>📅 Fecha:</strong> ${new Date(c.fecha).toLocaleString()}</p>
+          </div>
+        `
+          )
+          .join("");
+
+        contenedor.innerHTML = html;
+      } catch (error) {
+        document.getElementById("consultas").innerHTML =
+          "<p style='color:red;'>Error al cargar las consultas.</p>";
+      }
+    }
+
+    cargarConsultas();
+  </script>
+</body>
+</html>

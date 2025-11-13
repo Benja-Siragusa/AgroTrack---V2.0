@@ -1,109 +1,84 @@
 {
   "info": {
-    "_postman_id": "f0c6b8e9-9c9b-4c1f-9a0b-agrotrack-mvp",
-    "name": "AgroTrack - MVP (Node puro)",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección de endpoints del MVP AgroTrack (Node.js sin Express)."
+    "name": "AgroTrack API",
+    "_postman_id": "c3a2d7aa-9f21-4fb2-a278-1212fe64b111",
+    "description": "Colección Postman para pruebas del proyecto AgroTrack (API Contactos, Healthcheck y Login Demo).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Static - GET /",
-      "event": [
-        {
-          "listen": "test",
-          "script": { "exec": ["pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"], "type": "text/javascript" }
-        }
-      ],
+      "name": "GET - Estado del servidor",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/"
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8888/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8888",
+          "path": ["health"]
+        }
       }
     },
     {
-      "name": "Static - GET /productos",
-      "event": [
-        { "listen": "test", "script": { "exec": ["pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }
-      ],
-      "request": { "method": "GET", "url": "{{baseUrl}}/productos" }
+      "name": "GET - Listar contactos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8888/api/contactos",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8888",
+          "path": ["api", "contactos"]
+        }
+      }
     },
     {
-      "name": "Static - GET /contacto",
-      "event": [
-        { "listen": "test", "script": { "exec": ["pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }
-      ],
-      "request": { "method": "GET", "url": "{{baseUrl}}/contacto" }
-    },
-    {
-      "name": "Static - GET /login",
-      "event": [
-        { "listen": "test", "script": { "exec": ["pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }
-      ],
-      "request": { "method": "GET", "url": "{{baseUrl}}/login" }
-    },
-    {
-      "name": "Contacto - POST /contacto/cargar (form-urlencoded)",
-      "event": [
-        { "listen": "test", "script": { "exec": ["pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }
-      ],
+      "name": "POST - Crear contacto",
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
-          "mode": "urlencoded",
-          "urlencoded": [
-            { "key": "nombre", "value": "Ana Pérez", "type": "text" },
-            { "key": "email", "value": "ana@mail.com", "type": "text" },
-            { "key": "mensaje", "value": "Consulta de ejemplo desde Postman", "type": "text" }
-          ]
+          "mode": "raw",
+          "raw": "{\n    \"nombre\": \"Benja\",\n    \"email\": \"benja@example.com\",\n    \"mensaje\": \"Probando la API desde Postman\"\n}"
         },
-        "url": "{{baseUrl}}/contacto/cargar"
+        "url": {
+          "raw": "http://localhost:8888/api/contactos",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8888",
+          "path": ["api", "contactos"]
+        }
       }
     },
     {
-      "name": "Contacto - GET /contacto/listar",
-      "event": [
-        { "listen": "test", "script": { "exec": ["pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }
-      ],
-      "request": { "method": "GET", "url": "{{baseUrl}}/contacto/listar" }
-    },
-    {
-      "name": "Login demo - POST /auth/recuperar (echo)",
-      "event": [
-        { "listen": "test", "script": { "exec": ["pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }
-      ],
+      "name": "POST - Login demo (/auth/recuperar)",
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
-          "mode": "urlencoded",
-          "urlencoded": [
-            { "key": "usuario", "value": "demo", "type": "text" },
-            { "key": "clave", "value": "1234", "type": "text" }
-          ]
+          "mode": "raw",
+          "raw": "{\n    \"usuario\": \"demo\",\n    \"clave\": \"1234\"\n}"
         },
-        "url": "{{baseUrl}}/auth/recuperar"
+        "url": {
+          "raw": "http://localhost:8888/auth/recuperar",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8888",
+          "path": ["auth", "recuperar"]
+        }
       }
-    },
-    {
-      "name": "API - GET /api/status",
-      "event": [
-        { "listen": "test", "script": { "exec": ["pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });", "pm.test(\"Devuelve JSON\", function () { pm.response.to.be.json; });"], "type": "text/javascript" } }
-      ],
-      "request": { "method": "GET", "url": "{{baseUrl}}/api/status" }
-    },
-    {
-      "name": "404 - GET /no-existe",
-      "event": [
-        { "listen": "test", "script": { "exec": ["pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });"], "type": "text/javascript" } }
-      ],
-      "request": { "method": "GET", "url": "{{baseUrl}}/no-existe" }
     }
-  ],
-  "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8888" }
   ]
 }

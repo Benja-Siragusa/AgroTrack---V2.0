@@ -9,5 +9,18 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "Actividad obligatoria 1",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mysql2": "^3.15.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Benja-Siragusa/AgroTrack---V2.0.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Benja-Siragusa/AgroTrack---V2.0/issues"
+  },
+  "homepage": "https://github.com/Benja-Siragusa/AgroTrack---V2.0#readme"
 }

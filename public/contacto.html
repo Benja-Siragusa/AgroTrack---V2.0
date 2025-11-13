@@ -1,47 +1,115 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AgroTrack — Contacto</title>
-  <link rel="stylesheet" href="/estilos.css" />
-</head>
-<body>
-  <header>
-    <h1>AgroTrack</h1>
-    <p>Portal interno — MVP</p>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AgroTrack — Contacto</title>
+    <link rel="stylesheet" href="/estilos.css" />
+  </head>
+  <body>
+    <header>
+      <h1>AgroTrack</h1>
+      <p>Portal interno — MVP</p>
+    </header>
 
-  <div class="container">
-    <nav class="menu">
-      <a class="btn" href="/">Inicio</a>
-      <a class="btn" href="/productos">Productos</a>
-      <a class="btn active" href="/contacto">Contacto</a>
-      <a class="btn" href="/login">Login (demo)</a>
-      <a class="btn outline" href="/contacto/listar">Ver consultas</a>
-      <a class="btn outline" href="/api/status">Estado (JSON)</a>
-    </nav>
+    <div class="container">
+      <nav class="menu">
+        <a class="btn" href="/">Inicio</a>
+        <a class="btn" href="/productos.html">Productos</a>
+        <a class="btn active" href="/contacto.html">Contacto</a>
+        <a class="btn" href="/login.html">Login (demo)</a>
+        <a class="btn outline" href="/api/contactos" target="_blank"
+          >Ver consultas</a
+        >
+        <a class="btn outline" href="/health" target="_blank"
+          >estado del servidor</a
+        >
+      </nav>
 
-    <section class="card">
-      <h2>Contacto</h2>
+      <section class="card">
+        <h2>Contacto</h2>
 
-      <form method="POST" action="/contacto/cargar" autocomplete="on">
-        <label for="nombre">Nombre</label>
-        <input id="nombre" name="nombre" required autocomplete="name" />
+        <!-- FORMULARIO -->
+        <form id="form-contacto" autocomplete="on">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" name="nombre" required autocomplete="name" />
 
-        <label for="email">Email</label>
-        <input id="email" type="email" name="email" required autocomplete="email" />
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            required
+            autocomplete="email"
+          />
 
-        <label for="mensaje">Mensaje</label>
-        <textarea id="mensaje" name="mensaje" required placeholder="Escribe tu consulta..."></textarea>
+          <label for="mensaje">Mensaje</label>
+          <textarea
+            id="mensaje"
+            name="mensaje"
+            required
+            placeholder="Escribe tu consulta..."
+          ></textarea>
 
-        <button type="submit" class="btn-submit">Enviar</button>
-      </form>
+          <button type="submit" class="btn-submit">Enviar</button>
+        </form>
 
-      <p style="margin-top:12px;">
-        <a class="btn outline" href="/contacto/listar">Ver consultas guardadas</a>
-      </p>
-    </section>
-  </div>
-</body>
+        <p id="resultado" style="margin-top: 15px; font-weight: bold"></p>
+
+        <p style="margin-top: 12px">
+          <a class="btn outline" href="/consultas.html"
+            >Ver consultas guardadas</a
+          >
+        </p>
+      </section>
+    </div>
+
+    <!-- SCRIPT FETCH -->
+    <script>
+      document
+        .getElementById("form-contacto")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const datos = {
+            nombre: document.getElementById("nombre").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            mensaje: document.getElementById("mensaje").value.trim(),
+          };
+
+          const resultado = document.getElementById("resultado");
+
+          // Validación rápida antes de enviar
+          if (!datos.nombre || !datos.email || !datos.mensaje) {
+            resultado.textContent = "⚠️ Todos los campos son obligatorios.";
+            resultado.style.color = "red";
+            return;
+          }
+
+          try {
+            const res = await fetch("/api/contactos", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(datos),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+              resultado.textContent = `✅ Consulta registrada correctamente (ID: ${data.id})`;
+              resultado.style.color = "green";
+              e.target.reset();
+            } else {
+              resultado.textContent = `❌ Error: ${
+                data.message || "Datos inválidos"
+              }`;
+              resultado.style.color = "red";
+            }
+          } catch (err) {
+            resultado.textContent = "❌ Error al conectar con el servidor.";
+            resultado.style.color = "red";
+          }
+        });
+    </script>
+  </body>
 </html>

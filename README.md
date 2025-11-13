@@ -1,69 +1,167 @@
-Actividad obligatoria 1
+    README.md — AgroTrack V2.0
+    Datos del estudiante
+- Nombre: Benjamín Nicolás Siragusa Arbeloa
+- DNI / Legajo: 45.235.482
+- Materia: Programación Web II
+    
+    - Actividad Obligatoria 2
 
-Nombre: Benjamin Nicolas Siragusa Arbeloa
-DNI: 45.235.482
+ AgroTrack – V 2.0
+Portal interno con servidor Express + API REST + MySQL.
+Este proyecto es la evolución del MVP desarrollado en la Actividad Obligatoria 1.
+En esta segunda versión se incorporan:
 
-creacion del primer MVP del protal web interno de Agrotrack
 
-mapa de rutas:
+- Express como framework HTTP
+- API REST de contactos
+- Base de datos MySQL
+- Validaciones, middlewares y manejo centralizado de errores
+- Separación profesional por módulos
+- Variables de entorno con dotenv
+- Colección de Postman
+
+
+
+     Estructura del proyecto
 
 agrotrack/
-    data/
-        consultas.txt
-    public/
-        contacto.html
-        estilos.css
-        index.html
-        login.html
-        productos.html
-    .gitignore
-    AgroTrack.postman_collection.json
-    img1
-    img2
-    package.json
-    README.md
-    server.js
-
-1) para ejecutar el programa, en la terminal desde la carpeta principal, ejecutar el comando "node server"
-
-2) el servidor corre en el puerto 8888
-
-3) rutas de el prototipo
-
-    ruta    ->    fin de la ruta    ->    respuesta    ->    codigo de estado
-rutas del metodo get
-
-    /    ->     pagina de incio     ->    index.html    ->    200/400
-    /productos -> pag de productos  ->    productos.html ->   200/404
-    /contacto  -> form de contacto  ->    contacto.html  ->  200/404
-    /contacto/listar -> lista de contactos -> html con el contenido de data o "no hay consultas" -> 200/404
-    /login    ->    inicio sesion (demo)    ->    login.html    ->    200/404
-    /estilos.css    ->    cargar los estilos en cada pagina    ->    200/404
-
-(404: cualquier ruta no mapeada devuelve HTML “No encontrado” con link a /)
-
-ahora del motodo post
-    /contacto/cargar    ->    cargar una consulta a data    ->    html de agradecimiento    ->    200/400/500
-    /auth/recuperar    ->    hace un echo de los datos de incio de sesion (demo)    ->    html mostrando credenciales    200/500
+│
+├── server.js
+├── db.js
+│
+├── routes/
+│   └── contactos.js
+│
+├── middleware/
+│   ├── loggers.js
+│   └── errorHandler.js
+│
+├── public/
+│   ├── index.html
+│   ├── contacto.html
+│   ├── productos.html
+│   ├── login.html
+│   ├── consultas.html
+│   └── estilos.css
+│
+├── sql/
+│   └── schema.sql
+│
+├── .env
+├── .env.example
+├── .gitignore
+├── package.json
+└── README.md
 
 
+     Instalación y ejecución
+ 1. Clonar el repositorio
+git clone https://github.com/TU-USUARIO/AgroTrack-V2.0.git
+cd AgroTrack-V2.0
+
+ 2. Instalar dependencias
+npm install
+
+ 3. Configurar las variables de entorno
+Crear un archivo .env siguiendo este ejemplo:
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=tu_clave
+DB_NAME=agrotrack
+DB_PORT=3306
+PORT=8888
+
+También está incluido un archivo .env.example de referencia.
+ 4. Crear la base de datos
+En MySQL Workbench o consola:
+SOURCE sql/schema.sql;
+
+Esto creará la BD agrotrack y la tabla contactos.
+ 5. Ejecutar el servidor
+npm start
+
+Si todo está OK verás:
+Servidor Express escuchando en http://localhost:8888
 
 
-imagen de ejemplo al volver al incio, haciendo get a index.html
-![alt text](<Captura de pantalla (225).png>)
+     Rutas disponibles
+ 1. Rutas del frontend (HTML)
+Servidas desde /public:
+MétodoRutaDescripciónGET/Página principalGET/contacto.htmlFormulario de contacto (fetch API)GET/productos.htmlPágina de productosGET/login.htmlLogin de demostraciónGET/consultas.htmlVista HTML de consultas guardadasGET/api/contactosVista directa del JSON
 
-imagen de ejemplo al subir un formulario, haciendo post para cargar los datos en data
-![alt text](<Captura de pantalla (223).png>)
+ 2. Endpoints API REST
+📬 POST /api/contactos
+Registra una consulta nueva.
+Body (JSON):
+{
+  "nombre": "Benja",
+  "email": "benja@example.com",
+  "mensaje": "Hola!"
+}
 
+Respuestas:
 
-    ASINCRONIA
-en el codigo, se usa programacion asincrona para evitar el  bloqueo dele vent loop, los eventos "data","end" y "error" en el objeto req, se manejan mediante callback encapsuladas en una promise, lo que me permitio usar await en las funciones, esto me garantiza que el servidor espera de forma no bloqueante a que se reciba todo el cuerpo de la peticion antes de procesarla, tambien tenemos funciones con metodos como fs.promise.appendFle() y fs.promise.readFile() que tambien devuelven promesas y es asincrono, el event loop sigue ejecutando otras cosas hasta que la funcion trae el archivo
+201 Created
 
-    Cabeceras MIME
-mediante la funcion getMimeType(ext), el servidor identifica automaticamente el contenido de los archivos servidos, permite que el navegador interprete correctamente los archivos, html, css, js y json, no puse mas como imagenes o archivos de otro tipo ya que en este MVP no eran necesarios. en la funcion, cuando se recibe un archivo, con path.extname(filepath) obtenemos su extension y se usa una funcion para establecer el encabezado http
+{
+  "id": 5,
+  "nombre": "Benja",
+  "email": "benja@example.com",
+  "mensaje": "Hola!"
+}
 
-    Manejo de errores
-en el codigo implementamos multiples niveles de manejos de errores, tenemos errores de validacion de formularios por si por ejemplo faltan campos obligatorios por completas, errores de autenticacion en el login (solo de prueba ya que el log in no testea credenciales), y errores internos por si sucede alguna excepcion en algun block try/catch, devuelve un estado 500 y un mensaje de error interno del servidor, por ultimo tenemos un manejo de errores de archivos no encontrados con un estado de codigo 404 y un error ENOENT para cuando el archivo de consultas esta vacio evitar el fallo y mostrar un mensaje de que todavia no hay consultas.
+400 Bad Request
 
+{ "error": "Todos los campos son obligatorios." }
 
-Actividad Obligatoria 2:
+ GET /api/contactos
+Retorna todas las consultas.
+Ejemplo:
+[
+  {
+    "id": 1,
+    "nombre": "Jorge",
+    "email": "jorge@gmail.com",
+    "mensaje": "Consulta ejemplo",
+    "fecha": "2025-11-12T18:36:00.000Z"
+  }
+]
+
+ GET /health
+Estado del servidor:
+{
+  "status": "ok",
+  "version": "AgroTrack 2.0",
+  "time": "2025-11-12T19:08:00.000Z"
+}
+
+ Middlewares
+ Logger (logger.js)
+Registra cada petición en un archivo logs.txt:
+[2025-11-12T18:22:00] GET /api/contactos
+
+ Manejo centralizado de errores (errorHandler.js)
+Devuelve errores uniformes en formato JSON:
+{ "error": "Error interno del servidor" }
+
+ Postman Collection
+Se incluye el archivo:
+AgroTrack.postman_collection.json
+
+Contiene pruebas para:
+
+-GET /health
+
+-POST /api/contactos
+
+-GET /api/contactos
+
+-Pruebas con email inválido (400)
+
+-Pruebas con campos faltantes (400)
+
+     Validaciones implementadas
+-Todos los campos obligatorios (nombre, email, mensaje).
+-Email con expresión regular.
+-Errores 400 si el input es inválido.
+-Errores 500 manejados por middleware.

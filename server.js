@@ -1,201 +1,119 @@
-const http = require("http");
-const fs = require("fs");
+require("dotenv").config();
+const express = require("express");
 const path = require("path");
-const url = require("url");
-const os = require("os");
+const pool = require("./db");
 
+// Rutas
+const contactosRouter = require("./routes/contactos");
+
+// Middleware personalizados
+const loggers = require("./middleware/loggers");
+const errorHandler = require("./middleware/errorHandler");
+
+const app = express();
 const PORT = process.env.PORT || 8888;
 
-// MIME
-function getMimeType(ext) {
-  const types = {
-    ".html": "text/html; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".js": "application/javascript; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-  };
-  return types[ext] || "text/plain; charset=utf-8";
-}
+/* -----------------------------------------------------
+ * 1) MIDDLEWARE GENERAL
+ * -----------------------------------------------------*/
+app.use(loggers);                                   // Logs
+app.use(express.json());                            // Para JSON
+app.use(express.urlencoded({ extended: true }));    // Formularios
+app.use(express.static(path.join(__dirname, "public"))); // Archivos estáticos
 
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", (chunk) => (data += chunk));
-    req.on("end", () => resolve(data));
-    req.on("error", reject);
-  });
-}
+/* -----------------------------------------------------
+ * 2) ENDPOINTS DE PÁGINAS HTML
+ * -----------------------------------------------------*/
 
-const DATA_DIR = path.join(__dirname, "data");
-const CONSULTAS_FILE = path.join(DATA_DIR, "consultas.txt");
-function ensureDataDir() {
-  return fs.promises.mkdir(DATA_DIR, { recursive: true });
-}
+// Página principal
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
-const server = http.createServer(async (req, res) => {
-  if (req.method === "POST" && req.url === "/contacto/cargar") {
-    try {
-      const raw = await readBody(req);
-      const params = new URLSearchParams(raw);
-      const nombre = (params.get("nombre") || "").trim();
-      const email = (params.get("email") || "").trim();
-      const mensaje = (params.get("mensaje") || "").trim();
+// Vista HTML del listado de consultas
+app.get("/contacto/listar", async (req, res, next) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM contactos ORDER BY fecha DESC");
 
-      if (!nombre || !email || !mensaje) {
-        res.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
-        return res.end(
-          '<h2>Faltan campos requeridos</h2><a href="/contacto">Volver</a>'
-        );
-      }
+    const html = `
+      <h2>Consultas registradas</h2>
+      <table border="1" cellpadding="6">
+        <tr>
+          <th>ID</th><th>Nombre</th><th>Email</th><th>Mensaje</th><th>Fecha</th>
+        </tr>
 
-      // Fecha con formato "YYYY-MM-DD HH:mm"
-      const d = new Date();
-      const pad = (n) => String(n).padStart(2, "0");
-      const fecha = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
-        d.getDate()
-      )} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        ${rows
+          .map(
+            (r) => `
+              <tr>
+                <td>${r.id}</td>
+                <td>${r.nombre}</td>
+                <td>${r.email}</td>
+                <td>${r.mensaje}</td>
+                <td>${r.fecha.toISOString().slice(0, 19).replace("T", " ")}</td>
+              </tr>`
+          )
+          .join("")}
+      </table>
+      <br><a href="/">Volver al inicio</a>
+    `;
 
-      const bloque = `-------------------------
-Fecha: ${fecha}
-Nombre: ${nombre}
-Email: ${email}
-Mensaje: ${mensaje}
--------------------------
-
-`;
-
-      await ensureDataDir();
-      await fs.promises.appendFile(CONSULTAS_FILE, bloque, "utf8");
-
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(
-        `<h2>Gracias, ${nombre}. Registramos tu consulta.</h2><a href="/contacto">Volver</a> | <a href="/contacto/listar">Ver consultas</a>`
-      );
-    } catch (e) {
-      console.error("Error /contacto/cargar:", e);
-      res.writeHead(500, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(
-        '<h2>Error interno del servidor</h2><a href="/">Volver</a>'
-      );
-    }
+    res.send(html);
+  } catch (err) {
+    next(err);
   }
+});
 
-  if (req.method === "GET" && req.url === "/contacto/listar") {
-    try {
-      const contenido = await fs.promises
-        .readFile(CONSULTAS_FILE, "utf8")
-        .catch((err) => {
-          if (err.code === "ENOENT") return ""; // si no existe, tratamos como vacío
-          throw err;
-        });
-
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      if (!contenido.trim()) {
-        return res.end(
-          '<h2>Aún no hay consultas</h2><a href="/contacto">Volver</a>'
-        );
-      }
-      return res.end(
-        `<h2>Consultas</h2><pre>${contenido.replace(
-          /</g,
-          "&lt;"
-        )}</pre><a href="/">Volver</a>`
-      );
-    } catch (e) {
-      console.error("Error /contacto/listar:", e);
-      res.writeHead(500, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(
-        '<h2>Error interno del servidor</h2><a href="/">Volver</a>'
-      );
-    }
-  }
-
-  if (req.method === "POST" && req.url === "/login") {
-    try {
-      const raw = await readBody(req);
-      const params = new URLSearchParams(raw);
-      const user = (params.get("user") || "").trim();
-      const pass = (params.get("pass") || "").trim();
-
-      if (user === "demo" && pass === "1234") {
-        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        return res.end(
-          '<h2>Bienvenido, demo </h2><a href="/">Ir al inicio</a>'
-        );
-      } else {
-        res.writeHead(401, { "Content-Type": "text/html; charset=utf-8" });
-        return res.end(
-          '<h2>Credenciales inválidas</h2><a href="/login">Reintentar</a>'
-        );
-      }
-    } catch (e) {
-      console.error("Error /login:", e);
-      res.writeHead(500, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end("<h2>Error del servidor</h2>");
-    }
-  }
-
-  if (req.method === "POST" && req.url === "/auth/recuperar") {
-    try {
-      const raw = await readBody(req);
-      const params = new URLSearchParams(raw);
-      const usuario = (params.get("usuario") || "").trim();
-      const clave = (params.get("clave") || "").trim();
-
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(`
-      <h2>Datos recibidos</h2>
-      <p><strong>Usuario:</strong> ${usuario || "(vacío)"}</p>
-      <p><strong>Clave:</strong> ${clave || "(vacía)"}</p>
-      <a href="/">Volver</a>
-    `);
-    } catch (e) {
-      console.error("Error /auth/recuperar:", e);
-      res.writeHead(500, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(
-        '<h2>Error interno del servidor</h2><a href="/">Volver</a>'
-      );
-    }
-  }
-
-  // Rutas GET dinámicas opcionales
-  if (req.method === "GET" && req.url === "/api/status") {
-    const data = {
-      plataforma: os.platform(),
-      cpus: os.cpus().length,
-      memoriaLibre: os.freemem(),
-      hora: new Date().toISOString(),
-    };
-    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-    return res.end(JSON.stringify(data));
-  }
-
-  const parsedUrl = url.parse(req.url);
-  let pathname = parsedUrl.pathname || "/";
-
-  if (pathname === "/") pathname = "index.html";
-  // rutas
-  else if (pathname === "/productos") pathname = "productos.html";
-  else if (pathname === "/contacto") pathname = "contacto.html";
-  else if (pathname === "/login") pathname = "login.html";
-  else pathname = pathname.replace(/^\/+/, "");
-
-  // normaliza y evita traversals
-  const safePath = path.normalize(pathname).replace(/^(\.\.[/\\])+/, "");
-  const filePath = path.join(__dirname, "public", safePath);
-
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(
-        '<h2>404 - No encontrado</h2><a href="/">Ir al inicio</a>'
-      );
-    }
-    res.writeHead(200, { "Content-Type": getMimeType(path.extname(filePath)) });
-    return res.end(data);
+/* -----------------------------------------------------
+ * 3) ENDPOINTS DE ESTADO
+ * -----------------------------------------------------*/
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    version: "AgroTrack 2.0",
+    time: new Date().toISOString(),
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
+/* -----------------------------------------------------
+ * 4) RUTAS API (REST)
+ * -----------------------------------------------------*/
+app.use("/api/contactos", contactosRouter);
+
+/* -----------------------------------------------------
+ * 5) LOGIN DEMO (simulado)
+ * -----------------------------------------------------*/
+app.post("/auth/recuperar", (req, res) => {
+  const { usuario, clave } = req.body;
+
+  if (!usuario || !clave) {
+    return res.status(400).json({ error: "Faltan credenciales." });
+  }
+
+  // Login simulado
+  if (usuario === "demo" && clave === "1234") {
+    return res.json({
+      mensaje: "Inicio de sesión exitoso",
+      usuario,
+      rol: "demo",
+      token: "fake-jwt-demo-12345",
+    });
+  }
+
+  res.status(401).json({
+    error: "Credenciales incorrectas",
+    detalle: { usuario, clave },
+  });
+});
+
+/* -----------------------------------------------------
+ * 6) HANDLER DE ERRORES (GLOBAL)
+ * -----------------------------------------------------*/
+app.use(errorHandler);
+
+/* -----------------------------------------------------
+ * 7) INICIO DEL SERVIDOR
+ * -----------------------------------------------------*/
+app.listen(PORT, () => {
+  console.log(`Servidor Express escuchando en http://localhost:${PORT}`);
 });
